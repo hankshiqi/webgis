@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>路线规划</title>
+    <style type="text/css">
+        html,
+        body,
+        #container {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #panel {
+            position: fixed;
+            background-color: white;
+            max-height: 90%;
+            overflow-y: auto;
+            top: 10px;
+            right: 10px;
+            width: 280px;
+            z-index: 10;
+        }
+
+        #form {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            width: 400px; /* 修改这里的宽度 */
+        }
+    </style>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            securityJsCode: '072ce39736b79e1e640b506f6841b154',
+        }
+    </script>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=ecd788c9279180bb13b222e516ee6c29&plugin=AMap.Driving,AMap.Riding,AMap.Transfer"></script>
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+</head>
+
+<body>
+    <div id="container"></div>
+    <div id="panel"></div>
+    <div id="form">
+        <label for="direction">选择方向:</label>
+        <input type="radio" id="to" name="direction" value="to" checked onchange="updateForm()">
+        <label for="to">去程</label>
+        <input type="radio" id="from" name="direction" value="from" onchange="updateForm()">
+        <label for="from">返程</label>
+        <br><br>
+        <label for="mode">选择出行方式:</label>
+        <select id="mode" name="mode">
+            <option value="driving">驾车</option>
+            <option value="riding">骑行</option>
+            <option value="transfer">公交</option>
+        </select>
+        <br><br>
+        <div id="startContainer">
+            <label for="start">起点:</label>
+            <input type="text" id="start" name="start" placeholder="请输入起点">
+            <br><br>
+        </div>
+        <div id="endContainer" style="display:none;">
+            <label for="end">终点:</label>
+            <input type="text" id="end" name="end" placeholder="请输入终点">
+            <br><br>
+        </div>
+        <button onclick="searchRoute()">规划路线</button>
+    </div>
+
+    <script type="text/javascript">
+        var direction = 'to';
+        var travelMode = 'driving';
+
+        function updateForm() {
+            direction = document.querySelector('input[name="direction"]:checked').value;
+            if (direction === 'to') {
+                document.getElementById('startContainer').style.display = 'block';
+                document.getElementById('endContainer').style.display = 'none';
+            } else {
+                document.getElementById('startContainer').style.display = 'none';
+                document.getElementById('endContainer').style.display = 'block';
+            }
+        }
+
+        var map = new AMap.Map("container", {
+            resizeEnable: true,
+            center: [104.066301, 30.572961], // 地图中心点
+            zoom: 12 // 地图显示的缩放级别
+        });
+
+        function searchRoute() {
+            var start = document.getElementById('start').value;
+            var end = document.getElementById('end').value;
+            travelMode = document.getElementById('mode').value;
+
+            if (direction === 'to') {
+                end = '成都世界园艺博览会温江分会场';
+            } else {
+                start = '成都世界园艺博览会温江分会场';
+            }
+
+            if (travelMode === 'driving') {
+                var driving = new AMap.Driving({
+                    map: map,
+                    panel: "panel"
+                });
+
+                driving.search([
+                    { keyword: start || '北京', city: '北京' },
+                    { keyword: end, city: '成都' }
+                ], function (status, result) {
+                    if (status === 'complete') {
+                        console.log('绘制驾车路线完成');
+                    } else {
+                        console.error('获取驾车数据失败：' + result);
+                    }
+                });
+            } else if (travelMode === 'riding') {
+                var riding = new AMap.Riding({
+                    map: map,
+                    panel: "panel"
+                });
+
+                riding.search([
+                    { keyword: start || '北京', city: '北京' },
+                    { keyword: end, city: '成都' }
+                ], function (status, result) {
+                    if (status === 'complete') {
+                        console.log('绘制骑行路线完成');
+                    } else {
+                        console.error('获取骑行数据失败：' + result);
+                    }
+                });
+            } else if (travelMode === 'transfer') {
+                var transfer = new AMap.Transfer({
+                    map: map,
+                    panel: "panel",
+                    city: '成都',
+                    policy: AMap.TransferPolicy.LEAST_TIME
+                });
+
+                transfer.search([
+                    { keyword: start || '北京', city: '北京' },
+                    { keyword: end, city: '成都' }
+                ], function (status, result) {
+                    if (status === 'complete') {
+                        console.log('绘制公交路线完成');
+                    } else {
+                        console.error('获取公交数据失败：' + result);
+                    }
+                });
+            }
+        }
+
+        // 初始化表单
+        updateForm();
+    </script>
+</body>
+
+</html>
